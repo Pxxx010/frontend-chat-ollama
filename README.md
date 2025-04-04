@@ -1,12 +1,56 @@
-# React + Vite
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+# 🤖 Meu Assistente IA
 
-Currently, two official plugins are available:
+Um projeto em React para criar, editar e interagir com agentes de IA personalizados utilizando modelos locais via Ollama (como LLaMA 3, OpenChat, Mistral, Gemma).
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react/README.md) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+## ✨ Funcionalidades
 
-## Expanding the ESLint configuration
+- Criar agentes personalizados com nome, descrição, modelo e personalidade
+- Listar, editar e excluir agentes
+- Acessar chats individuais com cada agente
+- Histórico de conversas salvo localmente por agente
+- Ícones personalizados para cada tipo de agente
+- Interface moderna com TailwindCSS
 
-If you are developing a production application, we recommend using TypeScript and enable type-aware lint rules. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+## 🧠 Tecnologias
+
+- React + Vite
+- TailwindCSS
+- Ollama (modelos locais de IA)
+- localStorage
+
+## 🚀 Como rodar
+
+1. Certifique-se de que você tem o [Ollama](https://ollama.com) rodando localmente
+2. Clone este repositório
+3. Instale as dependências:
+
+```bash
+npm install
+```
+
+4. Inicie o projeto:
+
+```bash
+npm run dev
+```
+
+## 📂 Estrutura
+
+```
+src/
+├── App.jsx
+├── pages/
+│   ├── Agents.jsx
+│   └── AgentChat.jsx
+├── components/
+└── assets/
+```
+
+## ✅ Status
+
+Projeto em desenvolvimento, com suporte a múltiplos agentes e personalidades. Interface pronta para expansão com temas e filtros.
+
+## 📄 Licença
+
+MIT
