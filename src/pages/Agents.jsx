@@ -1,12 +1,14 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { FiSearch } from "react-icons/fi";
+import { FiSearch, FiMoreVertical, FiEdit2, FiTrash2 } from "react-icons/fi";
 import CreateAgentModal from "../components/CreateAgentModal";
 
 export default function Agents() {
   const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState("");
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [openMenuId, setOpenMenuId] = useState(null);
+  const [editingAgent, setEditingAgent] = useState(null);
 
   const [agents, setAgents] = useState(() => {
     const saved = localStorage.getItem("agents");
@@ -68,6 +70,32 @@ export default function Agents() {
     alert("Agentes atualizados com sucesso!");
   };
 
+  const handleDeleteAgent = (agentId) => {
+    setAgents(agents.filter(agent => agent.id !== agentId));
+    setOpenMenuId(null);
+  };
+
+  const handleEditAgent = (agentId) => {
+    const agentToEdit = agents.find(agent => agent.id === agentId);
+    setEditingAgent(agentToEdit);
+    setIsModalOpen(true);
+    setOpenMenuId(null);
+  };
+
+  const handleUpdateAgent = (updatedAgentData) => {
+    setAgents(agents.map(agent => 
+      agent.id === editingAgent.id 
+        ? { ...agent, ...updatedAgentData }
+        : agent
+    ));
+    setEditingAgent(null);
+    setIsModalOpen(false);
+  };
+
+  const isDefaultAgent = (agentId) => {
+    return agentId <= 4; // IDs 1-4 são os agentes padrão
+  };
+
   const getAgentIcon = (name) => {
     const lower = name.toLowerCase();
     if (lower.includes("historiador")) return "📜";
@@ -125,7 +153,7 @@ export default function Agents() {
         {filteredAgents.map((agent) => (
           <div
             key={agent.id}
-            className="bg-[#1A103D] border border-zinc-700 rounded-xl p-5 flex flex-col justify-between"
+            className="bg-[#1A103D] border border-zinc-700 rounded-xl p-5 flex flex-col justify-between relative"
           >
             <div>
               <div className="flex justify-between items-start mb-2">
@@ -135,6 +163,34 @@ export default function Agents() {
                     {agent.name}
                   </h2>
                 </div>
+                {!isDefaultAgent(agent.id) && (
+                  <div className="relative">
+                    <button
+                      onClick={() => setOpenMenuId(openMenuId === agent.id ? null : agent.id)}
+                      className="text-zinc-400 hover:text-white p-1"
+                    >
+                      <FiMoreVertical size={20} />
+                    </button>
+                    {openMenuId === agent.id && (
+                      <div className="absolute right-0 mt-2 w-40 bg-zinc-800 rounded-lg shadow-lg z-10">
+                        <button
+                          onClick={() => handleEditAgent(agent.id)}
+                          className="flex items-center gap-2 w-full px-4 py-2 text-sm text-white hover:bg-zinc-700 rounded-t-lg"
+                        >
+                          <FiEdit2 size={16} />
+                          Editar
+                        </button>
+                        <button
+                          onClick={() => handleDeleteAgent(agent.id)}
+                          className="flex items-center gap-2 w-full px-4 py-2 text-sm text-red-400 hover:bg-zinc-700 rounded-b-lg"
+                        >
+                          <FiTrash2 size={16} />
+                          Excluir
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
               <p className="text-sm text-zinc-300 mb-2">
                 {agent.description}
@@ -160,8 +216,12 @@ export default function Agents() {
 
       <CreateAgentModal
         isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
-        onCreateAgent={handleCreateAgent}
+        onClose={() => {
+          setIsModalOpen(false);
+          setEditingAgent(null);
+        }}
+        onCreateAgent={editingAgent ? handleUpdateAgent : handleCreateAgent}
+        editingAgent={editingAgent}
       />
     </div>
   );

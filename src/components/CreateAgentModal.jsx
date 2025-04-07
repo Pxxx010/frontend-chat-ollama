@@ -1,6 +1,6 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
-const CreateAgentModal = ({ isOpen, onClose, onCreateAgent }) => {
+const CreateAgentModal = ({ isOpen, onClose, onCreateAgent, editingAgent }) => {
   const [formData, setFormData] = useState({
     name: "",
     description: "",
@@ -10,6 +10,28 @@ const CreateAgentModal = ({ isOpen, onClose, onCreateAgent }) => {
   });
 
   const [showCustomPersonality, setShowCustomPersonality] = useState(false);
+
+  useEffect(() => {
+    if (editingAgent) {
+      setFormData({
+        name: editingAgent.name,
+        description: editingAgent.description,
+        personality: editingAgent.personality,
+        customPersonality: editingAgent.personality,
+        model: editingAgent.model,
+      });
+      setShowCustomPersonality(true);
+    } else {
+      setFormData({
+        name: "",
+        description: "",
+        personality: "reflexivo",
+        customPersonality: "",
+        model: "llama3",
+      });
+      setShowCustomPersonality(false);
+    }
+  }, [editingAgent]);
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -32,7 +54,9 @@ const CreateAgentModal = ({ isOpen, onClose, onCreateAgent }) => {
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
       <div className="bg-[#1A103D] rounded-xl p-6 w-full max-w-md">
         <div className="flex justify-between items-center mb-4">
-          <h2 className="text-xl font-semibold text-white">Criar Novo Agente</h2>
+          <h2 className="text-xl font-semibold text-white">
+            {editingAgent ? "Editar Agente" : "Criar Novo Agente"}
+          </h2>
           <button
             onClick={onClose}
             className="text-gray-400 hover:text-white"
@@ -121,7 +145,7 @@ const CreateAgentModal = ({ isOpen, onClose, onCreateAgent }) => {
               type="submit"
               className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-500"
             >
-              Criar Agente
+              {editingAgent ? "Salvar Alterações" : "Criar Agente"}
             </button>
           </div>
         </form>
