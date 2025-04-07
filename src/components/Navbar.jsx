@@ -16,10 +16,13 @@ export default function Navbar() {
 
       {/* Ícones à direita */}
       <div className="flex items-center gap-5 text-green-400 text-xl">
-        <FiGlobe className="cursor-pointer hover:text-green-300" />
+        <FiGlobe 
+          className="cursor-pointer hover:text-green-300" 
+          onClick={() => navigate('/agentes')}
+        />
         <FiMoon className="cursor-pointer hover:text-green-300" />
         <div className="w-8 h-8 rounded-full bg-white text-black flex items-center justify-center font-bold text-sm">
-          T
+          A
         </div>
       </div>
     </nav>
