@@ -1,15 +1,18 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import { FiSearch, FiMoreVertical, FiEdit2, FiTrash2 } from "react-icons/fi";
+import CreateAgentModal from "../components/CreateAgentModal";
 
 export default function Agents() {
   const navigate = useNavigate();
+  const [searchTerm, setSearchTerm] = useState("");
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [openMenuId, setOpenMenuId] = useState(null);
+  const [editingAgent, setEditingAgent] = useState(null);
 
   const [agents, setAgents] = useState(() => {
     const saved = localStorage.getItem("agents");
-
-    if (saved && saved !== "[]") {
-      return JSON.parse(saved);
-    }
+    if (saved && saved !== "[]") return JSON.parse(saved);
 
     const defaultAgents = [
       {
@@ -45,7 +48,6 @@ export default function Agents() {
         model: "llama3",
       },
     ];
-
     localStorage.setItem("agents", JSON.stringify(defaultAgents));
     return defaultAgents;
   });
@@ -54,67 +56,44 @@ export default function Agents() {
     localStorage.setItem("agents", JSON.stringify(agents));
   }, [agents]);
 
-  const [newAgent, setNewAgent] = useState({
-    name: "",
-    description: "",
-    personality: "",
-    customPersonality: "",
-    model: "llama3",
-  });
-
-  const [showForm, setShowForm] = useState(false);
-  const [editingId, setEditingId] = useState(null);
-  const [editedAgent, setEditedAgent] = useState({});
-
-  const handleChange = (e) => {
-    setNewAgent({ ...newAgent, [e.target.name]: e.target.value });
-  };
-
-  const handleAddAgent = (e) => {
-    e.preventDefault();
-    if (!newAgent.name.trim()) return;
-
-    const finalPersonality =
-      newAgent.personality === "custom"
-        ? newAgent.customPersonality
-        : newAgent.personality;
-
-    const newId = agents.length > 0 ? agents[agents.length - 1].id + 1 : 1;
-    const agentToAdd = {
-      id: newId,
-      name: newAgent.name,
-      description: newAgent.description,
-      personality: finalPersonality,
-      model: newAgent.model,
+  const handleCreateAgent = (newAgentData) => {
+    const newAgent = {
+      id: agents.length + 1,
+      ...newAgentData,
     };
-
-    setAgents([...agents, agentToAdd]);
-    setNewAgent({ name: "", description: "", personality: "", customPersonality: "", model: "llama3" });
-    setShowForm(false);
-    setTimeout(() => navigate(`/agente/${newId}`), 100);
+    setAgents([...agents, newAgent]);
   };
 
-  const handleDeleteAgent = (id) => {
-    setAgents(agents.filter((a) => a.id !== id));
-    localStorage.removeItem(`chat-${id}`);
+  const handleUpdateAgents = () => {
+    // Aqui você pode implementar a lógica para atualizar os agentes
+    // Por exemplo, buscar novos agentes de uma API
+    alert("Agentes atualizados com sucesso!");
   };
 
-  const handleEditClick = (agent) => {
-    setEditingId(agent.id);
-    setEditedAgent({ ...agent });
+  const handleDeleteAgent = (agentId) => {
+    setAgents(agents.filter(agent => agent.id !== agentId));
+    setOpenMenuId(null);
   };
 
-  const handleEditChange = (e) => {
-    setEditedAgent({ ...editedAgent, [e.target.name]: e.target.value });
+  const handleEditAgent = (agentId) => {
+    const agentToEdit = agents.find(agent => agent.id === agentId);
+    setEditingAgent(agentToEdit);
+    setIsModalOpen(true);
+    setOpenMenuId(null);
   };
 
-  const handleSaveEdit = () => {
-    const updatedAgents = agents.map((a) =>
-      a.id === editingId ? editedAgent : a
-    );
-    setAgents(updatedAgents);
-    setEditingId(null);
-    setEditedAgent({});
+  const handleUpdateAgent = (updatedAgentData) => {
+    setAgents(agents.map(agent => 
+      agent.id === editingAgent.id 
+        ? { ...agent, ...updatedAgentData }
+        : agent
+    ));
+    setEditingAgent(null);
+    setIsModalOpen(false);
+  };
+
+  const isDefaultAgent = (agentId) => {
+    return agentId <= 4; // IDs 1-4 são os agentes padrão
   };
 
   const getAgentIcon = (name) => {
@@ -126,140 +105,124 @@ export default function Agents() {
     return "🤖";
   };
 
+  const filteredAgents = agents.filter((agent) =>
+    agent.name.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
   return (
-    <div className="min-h-screen bg-[#101010] text-white flex flex-col items-center px-4 py-6">
-      <h1 className="text-2xl font-semibold mb-4">Agentes 🤖</h1>
+    <div className="min-h-screen bg-[#0F0B29] text-white px-8 py-6">
+      <div className="flex justify-between items-center mb-6">
+        <h1 className="text-2xl font-semibold">Agentes</h1>
+        <div className="flex gap-4">
+          <button 
+            onClick={handleUpdateAgents}
+            className="bg-zinc-800 hover:bg-zinc-700 px-4 py-2 rounded flex items-center gap-2 text-sm"
+          >
+            <span className="text-lg">🔄</span> Atualizar
+          </button>
+          <button 
+            onClick={() => setIsModalOpen(true)}
+            className="bg-green-600 hover:bg-green-500 px-4 py-2 rounded font-semibold text-sm"
+          >
+            + Criar Agente
+          </button>
+        </div>
+      </div>
 
-      {!showForm && (
-        <button
-          onClick={() => setShowForm(true)}
-          className="bg-cyan-600 hover:bg-cyan-500 px-4 py-2 mb-6 rounded-lg font-medium transition"
-        >
-          + Novo Agente
-        </button>
-      )}
-
-      {showForm && (
-        <form
-          onSubmit={handleAddAgent}
-          className="bg-zinc-900 p-6 rounded-xl shadow max-w-2xl w-full mb-6 space-y-4"
-        >
+      {/* Pesquisa e filtros */}
+      <div className="flex items-center gap-4 mb-6">
+        <div className="relative w-full max-w-sm">
+          <FiSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400" />
           <input
             type="text"
-            name="name"
-            value={newAgent.name}
-            onChange={handleChange}
-            className="w-full p-2 rounded bg-zinc-800 text-white outline-none"
-            placeholder="Nome do agente"
+            placeholder="Pesquisar agentes..."
+            className="pl-10 pr-4 py-2 bg-zinc-800 text-white rounded w-full focus:outline-none"
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
           />
-          <input
-            type="text"
-            name="description"
-            value={newAgent.description}
-            onChange={handleChange}
-            className="w-full p-2 rounded bg-zinc-800 text-white outline-none"
-            placeholder="Descrição"
-          />
+        </div>
+        <div className="flex gap-2">
+          <button className="bg-zinc-800 px-4 py-1 rounded text-sm">Ativos</button>
+          <button className="bg-gray-500 px-4 py-1 rounded text-sm font-semibold">Templates</button>
+          <button className="bg-zinc-800 px-4 py-1 rounded text-sm">Registros</button>
+        </div>
+      </div>
 
-          <select
-            name="personality"
-            value={newAgent.personality}
-            onChange={handleChange}
-            className="w-full p-2 rounded bg-zinc-800 text-white outline-none"
+      {/* Grid de agentes */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {filteredAgents.map((agent) => (
+          <div
+            key={agent.id}
+            className="bg-[#1A103D] border border-zinc-700 rounded-xl p-5 flex flex-col justify-between relative"
           >
-            <option value="">Selecione a personalidade</option>
-            <option value="Calmo e paciente">Calmo e paciente</option>
-            <option value="Engraçado e informal">Engraçado e informal</option>
-            <option value="Sério e direto ao ponto">Sério e direto ao ponto</option>
-            <option value="Curioso e comunicativo">Curioso e comunicativo</option>
-            <option value="custom">Personalizada</option>
-          </select>
-
-          {newAgent.personality === "custom" && (
-            <input
-              type="text"
-              name="customPersonality"
-              value={newAgent.customPersonality}
-              onChange={handleChange}
-              className="w-full p-2 rounded bg-zinc-800 text-white outline-none"
-              placeholder="Descreva a personalidade personalizada"
-            />
-          )}
-
-          <select
-            name="model"
-            value={newAgent.model}
-            onChange={handleChange}
-            className="w-full p-2 rounded bg-zinc-800 text-white outline-none"
-          >
-            <option value="llama3">LLaMA 3</option>
-            <option value="openchat">OpenChat</option>
-            <option value="mistral">Mistral</option>
-            <option value="gemma">Gemma</option>
-          </select>
-
-          <div className="flex justify-between">
-            <button
-              type="submit"
-              className="bg-green-600 hover:bg-green-500 px-4 py-2 rounded-lg font-medium transition"
-            >
-              Adicionar
-            </button>
-            <button
-              type="button"
-              onClick={() => setShowForm(false)}
-              className="bg-zinc-600 hover:bg-zinc-500 px-4 py-2 rounded-lg font-medium transition"
-            >
-              Cancelar
-            </button>
-          </div>
-        </form>
-      )}
-
-      <div className="bg-zinc-900 p-6 rounded-xl shadow max-w-2xl w-full space-y-4">
-        {agents.length === 0 ? (
-          <p className="text-zinc-400">Nenhum agente cadastrado ainda.</p>
-        ) : (
-          agents.map((agent) => (
-            <div
-              key={agent.id}
-              className="bg-gradient-to-r from-zinc-800 to-zinc-900 p-5 rounded-2xl shadow-md border border-zinc-700"
-            >
-              <div className="flex items-start gap-4">
-                <div className="text-3xl pt-1">{getAgentIcon(agent.name)}</div>
-                <div className="flex-1">
-                  <h2 className="text-xl font-bold text-cyan-400 drop-shadow">{agent.name}</h2>
-                  <p className="text-sm text-zinc-300 mt-1">{agent.description}</p>
-                  <p className="text-xs text-zinc-400 italic mt-2">
-                    Personalidade: {agent.personality || "não definida"}
-                  </p>
-                  <p className="text-xs text-zinc-500">Modelo: {agent.model}</p>
-                  <div className="flex gap-2 mt-4 justify-end">
+            <div>
+              <div className="flex justify-between items-start mb-2">
+                <div className="flex items-center gap-2">
+                  <span className="text-lg">{getAgentIcon(agent.name)}</span>
+                  <h2 className="text-lg font-semibold text-white leading-tight">
+                    {agent.name}
+                  </h2>
+                </div>
+                {!isDefaultAgent(agent.id) && (
+                  <div className="relative">
                     <button
-                      onClick={() => navigate(`/agente/${agent.id}`)}
-                      className="bg-cyan-700 hover:bg-cyan-600 px-3 py-1 rounded text-sm"
+                      onClick={() => setOpenMenuId(openMenuId === agent.id ? null : agent.id)}
+                      className="text-zinc-400 hover:text-white p-1"
                     >
-                      Abrir Chat
+                      <FiMoreVertical size={20} />
                     </button>
-                    <button
-                      onClick={() => handleEditClick(agent)}
-                      className="bg-yellow-700 hover:bg-yellow-600 px-3 py-1 rounded text-sm"
-                    >
-                      Editar
-                    </button>
-                    <button
-                      onClick={() => handleDeleteAgent(agent.id)}
-                      className="bg-red-700 hover:bg-red-600 px-3 py-1 rounded text-sm"
-                    >
-                      Excluir
-                    </button>
+                    {openMenuId === agent.id && (
+                      <div className="absolute right-0 mt-2 w-40 bg-zinc-800 rounded-lg shadow-lg z-10">
+                        <button
+                          onClick={() => handleEditAgent(agent.id)}
+                          className="flex items-center gap-2 w-full px-4 py-2 text-sm text-white hover:bg-zinc-700 rounded-t-lg"
+                        >
+                          <FiEdit2 size={16} />
+                          Editar
+                        </button>
+                        <button
+                          onClick={() => handleDeleteAgent(agent.id)}
+                          className="flex items-center gap-2 w-full px-4 py-2 text-sm text-red-400 hover:bg-zinc-700 rounded-b-lg"
+                        >
+                          <FiTrash2 size={16} />
+                          Excluir
+                        </button>
+                      </div>
+                    )}
                   </div>
+                )}
+              </div>
+              <p className="text-sm text-zinc-300 mb-2">
+                {agent.description}
+              </p>
+              <div className="mb-3">
+                <p className="text-sm text-zinc-400 font-semibold">Capacidades:</p>
+                <div className="flex flex-wrap gap-2 mt-1">
+                  <span className="bg-zinc-800 text-white text-xs px-3 py-1 rounded-full">
+                    {agent.personality}
+                  </span>
                 </div>
               </div>
             </div>
-          ))
-        )}
+            <button
+              onClick={() => navigate(`/agente/${agent.id}`)}
+              className="mt-4 bg-green-600 hover:bg-green-500 py-2 rounded text-sm font-medium w-full"
+            >
+              Conversar
+            </button>
+          </div>
+        ))}
       </div>
+
+      <CreateAgentModal
+        isOpen={isModalOpen}
+        onClose={() => {
+          setIsModalOpen(false);
+          setEditingAgent(null);
+        }}
+        onCreateAgent={editingAgent ? handleUpdateAgent : handleCreateAgent}
+        editingAgent={editingAgent}
+      />
     </div>
   );
 }
